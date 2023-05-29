@@ -1,10 +1,20 @@
 #include<iostream>
 #include"TCP.h"
+#include"RpcMes.h"
 
 int main(int argc, char const *argv[])
 {
-    int a = createTcpServer(12345);
-    int b = createTcpClient("127.0.0.1",12345);
-    std::cout<<a<<" "<<b;
+    RpcMessage a;
+    a.methodName = "222";
+    a.serviceName = "ddd";
+    a.parameterCount = 3;
+    a.parameters.push_back("a");
+    a.parameters.push_back("b");
+    a.parameters.push_back("c");
+    a.returnValue = "111";
+    std::string b = encode(a);
+    RpcMessage c = decode(b);
+    std::cout<<b<<std::endl;
+    std::cout<<c.parameters[0]<<" "<<c.parameters[1]<<" "<<c.parameters[2]<<" ";
     return 0;
 }

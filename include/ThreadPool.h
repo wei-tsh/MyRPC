@@ -1,60 +1,63 @@
+#pragma once
+
 #include <queue>
+#include <thread>
 #include <mutex>
-#include <pthread.h>
 #include <vector>
+#include <condition_variable>
+#include <future>
+#include <functional>
+#include <atomic>
+#include <iostream>
+#include <unistd.h>
 
 using namespace std;
-using Fun = void (*)(void *arg);
 
-struct Task
-{
-    Fun function;
-    void *arg;
-    Task();
-    Task(Fun f, void* arg);
-};
-
-class TaskQueue
-{
-private:
-    queue<Task> taskque;
-    mutex m_mutex;
-public:
-    TaskQueue(){};
-    ~TaskQueue(){};
-
-    void addTask(Task task);
-    void addTask(Fun f,void* arg);
-
-    Task takeTask();
-
-    inline int taskNum(){
-        return taskque.size();
-    }
-};
-
+//线程池，拥有1个管理线程以及多个执行任务的线程
 class ThreadPool
 {
-private:
-    TaskQueue taskq;                  //
-
-    pthread_t managerIDs;
-    vector<pthread_t> threadIDs;
-
-    int minNum;
-    int maxNUm;
-    int busyNum;
-    int liveNum;
-    int exitNum;
-
-    mutex poolmutex;
-    pthread_cond_t notEmpty;
-
-    bool shutdown;
-
 public:
-    ThreadPool(/* args */);
+    //构造函数与析构函数
+    ThreadPool(int min,int max);
     ~ThreadPool();
+
+    //向任务队列添加任务
+    template<class F, class... Args>
+    future<typename result_of<F()>::type> addTask(F&& f, Args&&... args);
+
+    //得到正在执行任务的线程的数量
+    int getBusyNum();
+    
+    //得到线程池中存在的线程的数量
+    int getAliveNum();
+
+private:
+    //执行任务的线程
+    static void worker(ThreadPool* pool);
+
+    //管理线程池的线程
+    static void manager(ThreadPool* pool);
+
+    //关闭多余线程的函数
+    void threadExit();
+
+private:
+    queue<function<void()> > tasks;     //任务队列
+
+    thread managerID;                   //管理者线程ID
+    vector<thread> workerIDs;           //执行任务的线程ID，用容器管理
+
+    int minNum;                         //线程池中最少容纳的线程数
+    int maxNum;                         //线程池中最大容纳的线程数
+    atomic<int> busyNum;                        //正在执行任务的线程数
+    atomic<int> liveNum;                        //存在线程池中的线程数
+    atomic<int> exitNum;                        //需要关闭的线程数
+
+    mutex poolmutex;                    //锁，用于保护线程池中的变量
+    condition_variable notEmpty;        //传递信号
+
+    atomic<bool> shutdown;                      //判断线程池是否需要销毁
 };
+
 
 

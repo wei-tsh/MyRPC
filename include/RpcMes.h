@@ -1,18 +1,23 @@
+#pragma once
+
 #include<string>
 #include<vector>
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
+
+using namespace std;
+
 //
 
 struct RpcMessage
 {
-    std::string serviceName;  // 服务名称
-    std::string methodName;   // 方法名称    
+    string serviceName;  // 服务名称
     int parameterCount;       // 参数个数
-    std::vector<std::string> parameters; // 参数列表
-    std::string returnValue;             // 返回值
+    vector<string> parameters; // 参数列表
+    string returnValue;             // 返回值
 };
 
-std::string encode(const RpcMessage& Mes);
-RpcMessage decode(const std::string& information);
+RpcMessage createRpcMessage(string ServiceName,int ParaCount, initializer_list<string> Para);
+string encode(const RpcMessage& Mes);
+RpcMessage decode(const string& information);

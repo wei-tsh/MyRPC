@@ -1,8 +1,11 @@
+#pragma once
+
 #include<string>
 #include<map>
 #include<mutex>
 #include<vector>
 #include<iostream>
+#include "ServiceMes.h"
 
 using namespace std;
 
@@ -26,6 +29,6 @@ class RegistryCenter{
         void UpdateLoad(const string& ServiceName,const string& ip,int load);
 
     private:
-        map<string,vector<ServiceInfo> > services;// 所有服务的名称和信息
-        mutex m_mutex;                        // 锁，保护服务列表
+        map<string,vector<ServiceInfo> > services;   // 所有服务的名称和信息
+        mutex m_mutex;                               // 锁，保护服务列表
 };

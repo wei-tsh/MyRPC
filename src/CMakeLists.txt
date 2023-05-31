@@ -1,6 +1,6 @@
 include_directories (../include)
 
-set(SRC_LIST RpcClient.cpp TCP.cpp RpcMes.cpp Registry.cpp)
+set(SRC_LIST RpcClient.cpp TCP.cpp RpcMes.cpp Registry.cpp ThreadPool.cpp)
 
 add_executable (main ${SRC_LIST})
 

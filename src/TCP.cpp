@@ -7,7 +7,6 @@ int createTcpServer(int port) {
 	{
 		return -1;
 	}
-
 	//绑定地址
 	sockaddr_in addrSer;
 	memset(&addrSer,0,sizeof(sockaddr_in));
@@ -49,6 +48,6 @@ int createTcpClient(const char* ip, int port) {
 		close(clientSocket);
 		return -1;
 	}
-
+	
 	return clientSocket;
 }

@@ -40,17 +40,16 @@ int main(int argc, char const *argv[])
     sockaddr_in addrClient;
     socklen_t len = sizeof(sockaddr);
     char buffer[1024];
-    int datalen;
     while (true)
     {
         int sockcon = accept(serversocket,(struct sockaddr *)&addrClient,&len);
         
         string Data;
         memset(buffer,0,1024);
-        datalen = 0;
+        
         int a = recv(sockcon, buffer, sizeof(buffer), 0);
         Data.append(buffer);
-        cout<<Data<<endl;
+        
         RegMes Mes = decodeRegMes(Data);
         if (Mes.type == 0)
         {

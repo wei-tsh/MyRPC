@@ -1,4 +1,3 @@
-#pragma once
 #include "ThreadPool.h"
 
 ThreadPool::ThreadPool(int min, int max)
@@ -29,7 +28,7 @@ ThreadPool::~ThreadPool()
     //回收用户线程
     for (thread& i : workerIDs)
     {
-        i.join();
+    i.join();
     }
 }
 
@@ -43,29 +42,18 @@ int ThreadPool::getAliveNum()
     return liveNum;
 }
 
-template<class F, class... Args>
-future<typename result_of<F()>::type> ThreadPool::addTask(F&& f, Args&&... args)
+void ThreadPool::addTask(function<void(int)> f,int arg)
 {
-    using return_type = result_of<F()>::type;
-
-    auto task = make_shared<packaged_task<return_type()> >(bind(forward<F>(f), forward<Args>(args)...));
-
-    future<return_type> result = task->get_future();
-    {
-        unique_lock<mutex> lock(poolmutex);
-
-        tasks.emplace([task]() { (*task)(); });
-    }
-
+    unique_lock<mutex> lock(poolmutex);
+    tasks.push(Task(f,arg));
     notEmpty.notify_one();
-    return result;
 }
 
 void ThreadPool::worker(ThreadPool* pool)
 {
     while (!pool->shutdown)
     {
-        function<void()> task;
+        Task task;
         {
             unique_lock<mutex>lock(pool->poolmutex);
             pool->notEmpty.wait(lock,[pool] { return pool->shutdown || !pool->tasks.empty(); });
@@ -88,7 +76,7 @@ void ThreadPool::worker(ThreadPool* pool)
             pool->tasks.pop();
         }
         pool->busyNum++;
-        task();
+        task.f(task.arg);
         pool->busyNum--;
     }
 }

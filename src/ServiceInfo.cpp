@@ -42,3 +42,37 @@ map<string, ServiceInfo> getServiceList(string list)
 
     return Services;
 }
+
+string encodeRegMes(int type,string ServicName, ServiceInfo info)
+{
+    Document doc;
+    doc.SetObject();
+
+    doc.AddMember("Type",Value().SetInt(type),doc.GetAllocator());
+    doc.AddMember("ServiceName",Value(ServicName.c_str(),doc.GetAllocator()).Move(),doc.GetAllocator());
+    doc.AddMember("IP",Value(info.ip.c_str(),doc.GetAllocator()).Move(),doc.GetAllocator());
+    doc.AddMember("Port",Value().SetInt(info.port).Move(),doc.GetAllocator());
+    doc.AddMember("Load",Value().SetInt(info.load).Move(),doc.GetAllocator());
+
+    StringBuffer buffer;
+    Writer<StringBuffer> writer(buffer);
+    doc.Accept(writer);
+
+    return buffer.GetString();
+}
+
+RegMes decodeRegMes(string Mes)
+{
+    RegMes regmes;
+    Document doc;
+
+    if(!doc.Parse(Mes.c_str()).HasParseError()){
+        regmes.type = doc["Type"].GetInt();
+        regmes.ServiceName = doc["ServiceName"].GetString();
+        regmes.info.ip = doc["IP"].GetString();
+        regmes.info.port = doc["Port"].GetInt();
+        regmes.info.load = doc["Load"].GetInt();
+    }
+
+    return regmes;
+}

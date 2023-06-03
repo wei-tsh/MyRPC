@@ -5,7 +5,5 @@
 #include "RpcMes.h"
 #include "ServiceInfo.h"
 
-using namespace std;
-
-vector<string> rpcCall(const string ip, int port, string ServiceName,string MethodName,int ParaCount, initializer_list<string> Para);
+vector<string> rpcCall(map<string, ServiceInfo> Services,string MethodName, initializer_list<string> Para);
 map<string,ServiceInfo> ServiceFind(const string ip, int port);

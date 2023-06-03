@@ -28,7 +28,7 @@ void RegistryCenter::UpdateLoad(const string& ServiceName,const string& ip,int l
 int main(int argc, char const *argv[])
 {
     RegistryCenter center;
-    center.RegisterService("111","127.0.0.1",5555);
+    
     int serversocket =createTcpServer(54468);
     
     if (serversocket < 0) {
@@ -50,14 +50,23 @@ int main(int argc, char const *argv[])
         datalen = 0;
         int a = recv(sockcon, buffer, sizeof(buffer), 0);
         Data.append(buffer);
-        if (Data == "request")
+        cout<<Data<<endl;
+        RegMes Mes = decodeRegMes(Data);
+        if (Mes.type == 0)
         {
             string responseData = center.FindService();
             send(sockcon,responseData.c_str(),responseData.length(),0);
             close(sockcon);
             continue;
         }
-        close(sockcon);      
+        else if (Mes.type == 1)
+        {
+            close(sockcon);
+            center.RegisterService(Mes.ServiceName,Mes.info.ip,Mes.info.port);
+            continue;
+        }
+        
+        close(sockcon);
 
     }
     close(serversocket);

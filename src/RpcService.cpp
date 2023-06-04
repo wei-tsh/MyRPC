@@ -9,19 +9,23 @@ RpcService::RpcService(string ServiceName, string ip, int port)
 
 void RpcService::registerMethod(string methodName, RpcMethod method)
 {
+    //将方法注册到服务中
     m_methods[methodName] = method;
     cout << "Method [" << methodName << "] registered" << endl;
 }
 
 vector<string> RpcService::executeMethod(const RpcMessage &Mes)
 {
+    //查找方法，如果没有方法，返回空
     if (m_methods.find(Mes.methodName) != m_methods.end()) {
         return m_methods[Mes.methodName](Mes.parameters);
     }
     return vector<string>();
 }
+
 void registerService(RpcService service,string ip,int host)
 {
+    //创建与注册中心的连接
     int clientsocket = createTcpClient(ip.c_str(),host);
     if(clientsocket < 0)
     {
@@ -29,7 +33,7 @@ void registerService(RpcService service,string ip,int host)
         return;
     }
 
-    // 将消息编码为二进制数据
+    // 向服务器发送注册请求
     ServiceInfo serinfo;
     serinfo.ip = service.getIp();
     serinfo.port = service.getPort();

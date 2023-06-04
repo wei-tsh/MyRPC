@@ -2,6 +2,7 @@
 
 ThreadPool::ThreadPool(int min, int max)
 {
+    //初始化信息
     minNum = min;
     maxNum = max;
     busyNum = 0;
@@ -9,7 +10,11 @@ ThreadPool::ThreadPool(int min, int max)
     exitNum = 0;
 
     shutdown = false;
+
+    //创建管理者线程
     managerID = thread(manager,this);
+
+    //创建工作者线程
     for (int i = 0; i < min; i++)
     {
         workerIDs.emplace_back(thread(&worker, this));
@@ -46,6 +51,8 @@ void ThreadPool::addTask(function<void(int)> f,int arg)
 {
     unique_lock<mutex> lock(poolmutex);
     tasks.push(Task(f,arg));
+
+    //让一个工作线程开始工作
     notEmpty.notify_one();
 }
 
@@ -56,13 +63,17 @@ void ThreadPool::worker(ThreadPool* pool)
         Task task;
         {
             unique_lock<mutex>lock(pool->poolmutex);
+            
+            //等待任务
             pool->notEmpty.wait(lock,[pool] { return pool->shutdown || !pool->tasks.empty(); });
 
+            //线程池关闭
             if (pool->shutdown && pool->tasks.empty()){
                 pool->liveNum--;
                 return;
             }
-            
+
+            //线程池删除任务
             if (pool->exitNum > 0 && pool->liveNum > pool->minNum)
             {
                 pool->exitNum --;
@@ -72,9 +83,12 @@ void ThreadPool::worker(ThreadPool* pool)
                 return;
             }
 
+            //从任务列表中取出任务
             task = move(pool->tasks.front());
             pool->tasks.pop();
         }
+
+        //执行任务
         pool->busyNum++;
         task.f(task.arg);
         pool->busyNum--;
@@ -93,7 +107,7 @@ void ThreadPool::manager(ThreadPool* pool)
         int queueSize = pool->tasks.size();
         lock.unlock();
 
-        //添加线程，但任务列表任务过多时
+        //添加线程，当任务列表任务过多时
         if(queueSize > pool->liveNum && pool->liveNum < pool->maxNum)
         {
             pool->liveNum++;
@@ -111,8 +125,10 @@ void ThreadPool::manager(ThreadPool* pool)
 
 void ThreadPool::threadExit()
 {
+    //获取本线程id
     thread::id t = this_thread::get_id();
-
+    
+    //从工作线程列表中删除本线程
     for (auto iter = workerIDs.begin(); iter != workerIDs.end(); iter++)
     {
         if (t == iter->get_id())

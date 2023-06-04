@@ -13,10 +13,13 @@
 
 using namespace std;
 
+//线程池执行的任务
 struct Task
 {
-    function<void(int)> f;
-    int arg;
+    function<void(int)> f;              //线程执行的函数
+    int arg;                            //函数的参数
+
+    //构造函数
     Task(function<void(int)> F,int Arg){f = F; arg = Arg;}
     Task(){};
 };
@@ -25,8 +28,9 @@ struct Task
 class ThreadPool
 {
 public:
-    //构造函数与析构函数
+    //构造函数
     ThreadPool(int min,int max);
+    //析构函数
     ~ThreadPool();
 
     //向任务队列添加任务

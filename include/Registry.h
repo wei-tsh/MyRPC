@@ -6,10 +6,12 @@
 #include "TCP.h"
 #include "ServiceInfo.h"
 
-
+//注册中心
 class RegistryCenter{
     public:
+        //构造函数
         RegistryCenter(){};
+        //析构函数
         ~RegistryCenter(){};
 
         // 注册服务

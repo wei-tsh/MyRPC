@@ -1,60 +1,77 @@
 #include "RpcServer.h"
 
-RpcService::RpcService(string ServiceName, string ip, int port)
-{
-    this->ServiceName = ServiceName;
-    this->ip = ip;
-    this->port = port;
-}
+map<string,RpcService> ServicesList;
 
-void RpcService::registerService()
+vector<string> add(vector<string> para)
 {
-    int clientsocket = createTcpClient(registry_ip.c_str(),registry_host);
-    if(clientsocket < 0)
+    
+    double sum;
+    try{
+        for (auto &i : para)
     {
-        cout<<"连接不上服务器，服务注册失败"<<endl;
-        return;
+        sum +=stod(i);
+    }
+    }catch(const invalid_argument& ia){
+        return vector<string>();
+    }
+    vector<string> retval;
+    retval.push_back(to_string(sum));
+    return retval;
+}
+
+void handle(int sockcon)
+{
+    char buffer[1024];
+    memset(buffer,0,1024);
+    
+    //接收信息
+    string Data;
+    recv(sockcon, buffer, sizeof(buffer), 0);
+    Data.append(buffer);
+    RpcMessage mes = decode(Data);
+    
+    //处理信息
+    if (ServicesList.find(mes.serviceName) != ServicesList.end()) {
+        vector<string> retval = ServicesList[mes.serviceName].executeMethod(mes);
+        for (auto &i : retval)
+        {
+            mes.returnValue.push_back(i);
+        }
     }
 
-    // 将消息编码为二进制数据
-    ServiceInfo serinfo;
-    serinfo.ip = this->ip;
-    serinfo.port = this->port;
-    serinfo.load = 0;
-    string Data = encodeRegMes(1,this->ServiceName,serinfo);
-
-    // 发送消息
-    send(clientsocket, Data.c_str(), Data.length(), 0);
-
-    // 关闭TCP连接
-    close(clientsocket);
+    //回复信息
+    string retData = encode(mes);
+    send(sockcon,retData.c_str(),retData.length(),0);
+    close(sockcon);
 }
 
-void RpcService::setRegistryAddress(string ip, int host)
+void addService(string ServiceName,string ip,int host)
 {
-    this->registry_ip = ip;
-    this->registry_host = host;
-}
-
-void RpcService::registerMethod(string &methodName, RpcMethod method)
-{
-    m_methods[methodName] = method;
-    cout << "Method [" << methodName << "] registered" << endl;
-}
-
-vector<string> RpcService::executeMethod(const RpcMessage &Mes)
-{
-    if (m_methods.find(Mes.methodName) != m_methods.end()) {
-        return m_methods[Mes.methodName](Mes.parameters);
-    }
-    return vector<string>();
+    ServicesList[ServiceName] = RpcService(ServiceName,ip,host);
+    registerService(ServicesList[ServiceName],"127.0.0.1",54468);
 }
 
 int main(int argc, char const *argv[])
 {
-    RpcService one("one","127.0.0.1",45678);
-    one.setRegistryAddress("127.0.0.1",54468);
-    one.registerService();
+    addService("one","127.0.0.1",45678);
+    ServicesList["one"].registerMethod("add",add);
+    ThreadPool pool(5,15);
+    int serversocket =createTcpServer(45678);
+    
+    if (serversocket < 0) {
+        close(serversocket);
+        cout<<"创建服务器失败"<<endl;
+        return 0;
+    }
 
+    sockaddr_in addrClient;
+    socklen_t len = sizeof(sockaddr);
+    while (true)
+    {
+        int sockcon = accept(serversocket,(struct sockaddr *)&addrClient,&len);
+        pool.addTask(handle,sockcon);
+    }
+    close(serversocket);
+    
     return 0;
 }

@@ -5,7 +5,7 @@ vector<string> rpcCall(map<string, ServiceInfo> Services,string MethodName, init
     for (auto &i : Services)
     {
         string ServiceName = i.first;
-        RpcMessage Mes = createRpcMessage(ServiceName,MethodName,Para.size(),Para);
+        RpcMessage Mes = createRpcMessage(ServiceName,MethodName,Para);
 
         // 建立TCP连接
         int clientSocket = createTcpClient(i.second.ip.c_str(),i.second.port);
@@ -16,7 +16,6 @@ vector<string> rpcCall(map<string, ServiceInfo> Services,string MethodName, init
 
         // 将消息编码为二进制数据
         string Data = encode(Mes);
-
         // 发送消息
         send(clientSocket, Data.c_str(), Data.length(), 0);
 
@@ -57,7 +56,6 @@ map<string, ServiceInfo> ServiceFind(const string ip, int port)
     while ((len = recv(clientSocket, buffer, sizeof(buffer), 0)) > 0) {
         responseData.append(buffer, len);
     }
-    cout<<responseData;
     services = getServiceList(responseData);
     close(clientSocket);
     return services;
@@ -66,10 +64,13 @@ map<string, ServiceInfo> ServiceFind(const string ip, int port)
 int main(int argc, char const *argv[])
 {
     map<string, ServiceInfo> Services = ServiceFind("127.0.0.1",54468);
-    cout<<Services["111"].ip<<endl;
 
-    //vector<string> ret_val = rpcCall(Services,"add",{"1","2"});
-
+    vector<string> ret_val = rpcCall(Services,"add",{"1","2"});
+    for (auto &i : ret_val)
+    {
+        cout<<i<<endl;
+    }
+    
     return 0;
 }
 

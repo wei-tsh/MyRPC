@@ -25,3 +25,6 @@ class RegistryCenter{
         map<string,ServiceInfo> services;            // 所有服务的名称和信息
         mutex m_mutex;                               // 锁，保护服务列表
 };
+
+//服务中心启动参数
+bool checkStartPara(int argc, char const *argv[],string &ip,int &port);

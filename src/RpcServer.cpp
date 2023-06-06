@@ -50,17 +50,107 @@ void handle(int sockcon)
 }
 
 //向本地服务列表添加服务并向注册中心注册服务
-void addService(string ServiceName,string ip,int host)
+void addService(string ServiceName,string ip,int host,string regip,int regport)
 {
     ServicesList[ServiceName] = RpcService(ServiceName,ip,host);
-    registerService(ServicesList[ServiceName],"127.0.0.1",54468);
+    registerService(ServicesList[ServiceName],regip,regport);
+}
+
+bool checkStartPara(int argc, char const *argv[],string &ip,int &port,string &regip,int &regport)
+{
+    //判断有无输入ip和端口
+    bool hasport = false;
+    bool hasregip = false;
+    bool hasregport = false;
+
+    //读取数据
+    for (int i = 1; i < argc; i+=2)
+    {
+        //判断是否有输入端口号
+        if (strcmp(argv[i],"-p")==0)
+        {
+            if (argc > i+1)
+            {
+                port = std::stoi(argv[i+1]);
+                hasport = true;
+            }
+            else
+            {
+                cout<<"输入错误，-h 查看启动参数"<<endl;
+                return 0;
+            }
+        }
+        //判断是否有输入ip地址
+        else if(strcmp(argv[i],"-i")==0)
+        {
+            if (argc > i+1 && CheckIPAddrIsVaild(argv[i+1]))
+            {
+                ip = argv[i+1];
+            }else
+            {
+                cout<<"输入错误，-h 查看启动参数"<<endl;
+                return 0;
+            }
+            
+        }
+        else if(strcmp(argv[i],"-r")==0)
+        {
+            if (argc > i+1 && CheckIPAddrIsVaild(argv[i+1]))
+            {
+                regip = argv[i+1];
+                hasregip = true;
+            }else
+            {
+                cout<<"输入错误，-h 查看启动参数"<<endl;
+                return 0;
+            }
+        }
+        else if (strcmp(argv[i],"-a")==0)
+        {
+            if (argc > i+1)
+            {
+                regport = std::stoi(argv[i+1]);
+                hasregport = true;
+            }
+            else
+            {
+                cout<<"输入错误，-h 查看启动参数"<<endl;
+                return 0;
+            }
+        }
+        //判断是否输入的是帮助参数
+        else if(strcmp(argv[i],"-h")==0)
+        {
+            cout<<"启动参数:\n-h 帮助参数\n-i 服务器的ip地址(默认为0.0.0.0)\n-p 服务器监听的端口（必须）"<<endl;
+            cout<<"-r 注册中心的ip地址（必须）\n-a 注册中心监听的端口（必须）"<<endl;
+            return 0;
+        }
+    }
+    //如果端口号，提示用户查看参数
+    if (!hasport||!hasregip||!hasregport)
+    {
+        cout<<"输入错误，-h 查看启动参数"<<endl;
+
+        return 0;
+    }
+
+    return 1;
 }
 
 //RPC服务器
 int main(int argc, char const *argv[])
 {
+    string ip = "0.0.0.0";
+    string regip;
+    int port;
+    int regport;
+    if(!checkStartPara(argc,argv,ip,port,regip,regport))
+    {
+        return 0;
+    }
+    cout<<ip<<" "<<port<<"  "<<regip<<" "<<regport<<endl;
     //添加服务
-    addService("one","127.0.0.1",45678);
+    addService("one",ip,port,regip,regport);
 
     //注册方法
     ServicesList["one"].registerMethod("add",add);

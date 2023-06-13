@@ -33,7 +33,8 @@ string encode(const RpcMessage &Mes)
         val2Array.PushBack(Value(i.c_str(), doc.GetAllocator()), doc.GetAllocator());
     }
     doc.AddMember("ReturnValues",val2Array.Move(),doc.GetAllocator());
-    
+    doc.AddMember("Error",Value(Mes.error.c_str(),doc.GetAllocator()).Move(),doc.GetAllocator());
+
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);
     doc.Accept(writer);
@@ -67,6 +68,8 @@ RpcMessage decode(const std::string& information)
                 RecMes.returnValue.push_back(b[i].GetString());
             }
         }
+
+        RecMes.error = doc["Error"].GetString();
     }
     
     return RecMes;

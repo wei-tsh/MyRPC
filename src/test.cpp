@@ -18,20 +18,16 @@
 //     sleep(1);
 // }
 
-// #include"RpcMes.h"
-// #include<iostream>
+#include"RpcMes.h"
+#include<iostream>
 
-// int main(int argc, char const *argv[])
-// {
-//     RpcMessage c = decode("{\"ServiceName\":\"one\",\"MethodName\":\"add\",\"Parameters\":[\"1\",\"2\"],\"ReturnValues\":[\"3.000000\"]}");
-//     for (auto &i : c.returnValue)
-//     {
-//         cout<<i<<endl;
-//     }
-    
+int main(int argc, char const *argv[])
+{
+    RpcMessage c = decode("{\"ServiceName\":\"one\",\"MethodName\":\"add\",\"Parameters\":[\"1\",\"2\",\"5\",\"7\",\"9\"],\"ReturnValues\":[],\"Error\":\"\"}");
+    cout<<c.serviceName<<"  "<<c.methodName<<"  "<<c.error<<"  "<<endl;
 
-//     return 0;
-// }
+    return 0;
+}
 
 
 // #include<iostream>
@@ -119,12 +115,12 @@
 //     return 0;
 // }
 
-#include "TCP.h"
-#include<iostream>
-using namespace std;
-int main(int argc, char const *argv[])
-{
-    bool a =CheckIPAddrIsVaild("127.0.a.1");
-    cout<<a<<endl;
-    return 0;
-}
+// #include "TCP.h"
+// #include<iostream>
+// using namespace std;
+// int main(int argc, char const *argv[])
+// {
+//     bool a =CheckIPAddrIsVaild("127.0.a.1");
+//     cout<<a<<endl;
+//     return 0;
+// }

@@ -6,13 +6,11 @@ void RegistryCenter::RegisterService(const string& ServiceName,const string& ip,
     lock_guard<mutex> lock(m_mutex);
 
     //初始化服务信息
-    ServiceInfo info;
-    info.ip = ip;
-    info.port = port;
-    info.load = 0;
+    services[ServiceName].ip = ip;
+    services[ServiceName].port = port;
+    services[ServiceName].load = 0;
 
     //将服务信息加入服务信息表
-    services[ServiceName] = info;
     cout<<ServiceName<<"  "<<"registered  ip:"<<ip<<"  port:"<<port<<endl;
 }
 

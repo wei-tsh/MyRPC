@@ -1,8 +1,9 @@
 include_directories (../include)
 
-set(CLI_SRC_LIST RpcClient.cpp TCP.cpp RpcMes.cpp ServiceInfo.cpp)
-set(REG_SRC_LIST Registry.cpp TCP.cpp RpcMes.cpp ServiceInfo.cpp)
-set(SER_SRC_LIST RpcServer.cpp TCP.cpp RpcMes.cpp ServiceInfo.cpp RpcService.cpp ThreadPool.cpp)
+set(SRC_LIST TCP.cpp RpcMes.cpp ServiceInfo.cpp RpcService.cpp ThreadPool.cpp Rpc.cpp)
+set(CLI_SRC_LIST Client.cpp ${SRC_LIST})
+set(REG_SRC_LIST Registry.cpp ${SRC_LIST})
+set(SER_SRC_LIST Server.cpp ${SRC_LIST})
 
 add_executable (client ${CLI_SRC_LIST})
 add_executable (registry ${REG_SRC_LIST})

@@ -28,3 +28,6 @@ class RegistryCenter{
 
 //服务中心启动参数
 bool checkStartPara(int argc, char const *argv[],string &ip,int &port);
+
+//预期实现功能
+//更新服务负载，心跳检测

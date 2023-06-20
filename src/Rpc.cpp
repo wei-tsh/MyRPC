@@ -26,11 +26,8 @@ void handle(int sockcon)
     //在本地服务列表查找服务，如果没有就不处理RPC信息
     if (ServicesList.find(mes.serviceName) != ServicesList.end()) 
     {
-        vector<string> retval = ServicesList[mes.serviceName].executeMethod(mes);
-        for (auto &i : retval)
-        {
-            mes.returnValue.push_back(i);
-        }
+        string error = ServicesList[mes.serviceName].executeMethod(mes);
+        mes.error = error;
     }
 
     //回复RPC信息

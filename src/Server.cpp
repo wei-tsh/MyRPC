@@ -1,7 +1,7 @@
 #include "Rpc.h"
 
 //测试函数
-vector<string> add(vector<string> para)
+string add(vector<string>& para,vector<string>& retval)
 {
     
     double sum;
@@ -11,11 +11,10 @@ vector<string> add(vector<string> para)
         sum +=stod(i);
     }
     }catch(const invalid_argument& ia){
-        return vector<string>();
+        return "para error";
     }
-    vector<string> retval;
     retval.push_back(to_string(sum));
-    return retval;
+    return string();
 }
 
 bool checkStartPara(int argc, char const *argv[],string &ip,int &port,string &regip,int &regport)

@@ -1,15 +1,19 @@
 #include "Rpc.h"
 
-//服务器本地服务列表
-map<string,RpcService> ServicesList;
+RpcService* service;
 
-RpcServer::RpcServer(string ip, int port, string regip, int regport)
+RpcServer::RpcServer(int argc, char const *argv[],string serviceName)
 {
-    this->IP = ip;
-    this->port = port;
-    this->Regip = regip;
-    this->RegPort = regport;
+    startParaOK =checkStartPara(argc,argv);
+    setServiceName(serviceName);
+    service = new RpcService();
     pool = new ThreadPool(10,15);
+}
+
+RpcServer::~RpcServer()
+{
+    pool->~ThreadPool();
+    delete service;
 }
 
 void handle(int sockcon,int load)
@@ -24,17 +28,14 @@ void handle(int sockcon,int load)
     RpcMessage mes = decode(Data);
     
     //在本地服务列表查找服务，如果没有就不处理RPC信息
-    if (ServicesList.find(mes.serviceName) != ServicesList.end()) 
+    if (!strcmp(mes.methodName.c_str(),"heartCheck"))
     {
-        if (!strcmp(mes.methodName.c_str(),"heartCheck"))
-        {
-            mes.returnValue.push_back(to_string(load));
-        }
-        else
-        {
-            string error = ServicesList[mes.serviceName].executeMethod(mes);
-            mes.error = error;
-        }
+        mes.returnValue.push_back(to_string(load));
+    }
+    else
+    {
+        string error = service->executeMethod(mes);
+        mes.error = error;
     }
 
     //回复RPC信息
@@ -43,27 +44,18 @@ void handle(int sockcon,int load)
     close(sockcon);
 }
 
-void RpcServer::addService(string ServiceName)
+void RpcServer::addMethod(string MethodName, RpcMethod method)
 {
-    ServicesList[ServiceName] = RpcService(ServiceName);
-}
-
-void RpcServer::addMethod(string ServiceName,string MethodName, RpcMethod method)
-{
-    //在服务列表查找服务，如果没有就不处理RPC信息
-    if (ServicesList.find(ServiceName) != ServicesList.end()) 
-    {
-        ServicesList[ServiceName].registerMethod(MethodName,method);
-    }
-    else
-    {
-        cout<<"找不到服务名："<<ServiceName<<"，方法："<<MethodName<<"注册失败"<<endl;
-    }
-    
+    service->registerMethod(MethodName,method);
 }
 
 void RpcServer::start()
 {
+    if (!startParaOK)
+    {
+        return;
+    }
+    
     registerService();
     //创建监听套接字
     int serversocket =createTcpServer(port);
@@ -87,29 +79,74 @@ void RpcServer::start()
     close(serversocket);
 }
 
+bool RpcServer::checkStartPara(int argc, char const *argv[])
+{
+    //判断有无输入ip和端口
+    bool hasport = false;
+    //读取数据
+    for (int i = 1; i < argc; i+=2)
+    {
+        //判断是否有输入端口号
+        if (strcmp(argv[i],"-p")==0)
+        {
+            if (argc > i+1)
+            {
+                port = std::stoi(argv[i+1]);
+                hasport = true;
+            }
+            else
+            {
+                cout<<"输入错误，-h 查看启动参数"<<endl;
+                return 0;
+            }
+        }
+        //判断是否有输入ip地址
+        else if(strcmp(argv[i],"-i")==0)
+        {
+            if (argc > i+1 && CheckIPAddrIsVaild(argv[i+1]))
+            {
+                IP = argv[i+1];
+            }else
+            {
+                cout<<"输入错误，-h 查看启动参数"<<endl;
+                return 0;
+            }
+        }
+        //判断是否输入的是帮助参数
+        else if(strcmp(argv[i],"-h")==0)
+        {
+            cout<<"启动参数:\n-h 帮助参数\n-i 服务器的ip地址(默认为0.0.0.0)\n-p 服务器监听的端口（必须）"<<endl;
+            return 0;
+        }
+    }
+    //如果端口号，提示用户查看参数
+    if (!hasport)
+    {
+        cout<<"输入错误，-h 查看启动参数"<<endl;
+        return 0;
+    }
+    return 1;
+}
+
 void RpcServer::registerService()
 {
     //创建与注册中心的连接
-    int clientsocket = createTcpClient(Regip.c_str(),RegPort);
+    int clientsocket = createTcpClient(registryIP.c_str(),registryPort);
     if(clientsocket < 0)
     {
         cout<<"连接不上服务器，服务注册失败"<<endl;
         return;
     }
 
-    
-    for (auto &i : ServicesList)
-    {
-        // 向服务器发送注册请求
-        ServiceInfo serinfo;
-        serinfo.ip = IP;
-        serinfo.port = port;
-        serinfo.load = 0;
-        string Data = encodeRegMes(1,i.second.getServiceName(),serinfo);
+    // 向服务器发送注册请求
+    ServiceInfo serinfo;
+    serinfo.ip = IP;
+    serinfo.port = port;
+    serinfo.load = 0;
+    string Data = encodeRegMes(1,ServiceName,serinfo);
 
-        // 发送消息
-        send(clientsocket, Data.c_str(), Data.length(), 0);
-    }
+    // 发送消息
+    send(clientsocket, Data.c_str(), Data.length(), 0);
 
     // 关闭TCP连接
     close(clientsocket);
@@ -170,10 +207,63 @@ vector<string> RpcClient::rpcCall(string MethodName, initializer_list<string> Pa
     return vector<string>();
 }
 
+bool RpcClient::checkStartPara(int argc, char const *argv[])
+{
+    //判断有无输入ip和端口
+    bool hasport = false;
+    bool hasip = false;
+    //读取数据
+    for (int i = 1; i < argc; i+=2)
+    {
+        //判断是否有输入端口号
+        if (strcmp(argv[i],"-p")==0)
+        {
+            if (argc > i+1)
+            {
+                TargetPort = std::stoi(argv[i+1]);
+                if (TargetPort>65535||TargetPort<0)
+                {
+                    cout<<"端口号超出范围，-h 查看启动参数"<<endl;
+                    return 0;
+                }
+                hasport = true;
+            }
+        }
+        //判断是否有输入ip地址
+        else if(strcmp(argv[i],"-i")==0)
+        {
+            if (argc > i+1&&CheckIPAddrIsVaild(argv[i+1]))
+            {
+                Targetip = argv[i+1];
+                hasip = true;
+            }
+            else
+            {
+                cout<<"ip地址错误，-h 查看启动参数"<<endl;
+                    return 0;
+            }
+        }
+        //判断是否输入的是帮助参数
+        else if(strcmp(argv[i],"-h")==0)
+        {
+            cout<<"启动参数:\n-h 帮助参数\n-i 注册中心的ip地址（必须）\n-p 注册中心的端口（必须）"<<endl;
+            return 0;
+        }
+    }
+    //如果缺少ip或者端口号，提示用户查看参数
+    if (!hasport||!hasip)
+    {
+        cout<<"输入错误，-h 查看启动参数"<<endl;
+        return 0;
+    }
+
+    return 1;
+}
+
 void RpcClient::ServiceFind()
 {
     //与注册中心建立TCP连接
-    int clientSocket = createTcpClient(Regip.c_str(), RegPort);
+    int clientSocket = createTcpClient(Targetip.c_str(), TargetPort);
     if (clientSocket < 0) {
         close(clientSocket);
         return ;
@@ -199,13 +289,24 @@ void RpcClient::ServiceFind()
     close(clientSocket);
 }
 
-RpcClient::RpcClient(string regip,int regport)
+RpcClient::RpcClient(int argc, char const *argv[])
 {
-    this->Regip = regip;
-    this->RegPort = regport;
-    ServiceFind();
-    if (services.size()==0)
+    if (argc > 1 && checkStartPara(argc,argv))
     {
-        cout<<"当前无可用服务"<<endl;
+        ServiceInfo serverinfo;
+        serverinfo.ip = Targetip;
+        serverinfo.port = TargetPort;
+        serverinfo.load = 0;
+        services["direct"] = serverinfo;
+    }
+    else if (argc == 1)
+    {
+        Targetip = registryIP;
+        TargetPort = registryPort;
+        ServiceFind();
+        if (services.size()==0)
+        {
+            cout<<"当前无可用服务"<<endl;
+        }
     }
 }

@@ -13,7 +13,6 @@ class RpcService {
 public:
     //构造函数
     RpcService(){};
-    RpcService(string ServiceName);
     //析构函数
     ~RpcService(){};
 

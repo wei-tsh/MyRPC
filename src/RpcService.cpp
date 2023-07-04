@@ -1,10 +1,5 @@
 #include"RpcService.h"
 
-RpcService::RpcService(string ServiceName)
-{
-    this->ServiceName = ServiceName;
-}
-
 void RpcService::registerMethod(string methodName, RpcMethod method)
 {
     //将方法注册到服务中

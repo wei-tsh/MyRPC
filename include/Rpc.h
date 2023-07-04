@@ -2,24 +2,31 @@
 #include "RpcService.h"
 #include "ThreadPool.h"
 
+const string registryIP = "127.0.0.1";
+const int registryPort = 12345;
+
 class RpcServer
 {
 private:
-    string Regip;
-    int RegPort;
-    string IP;
+    string IP = "0.0.0.0";
     int port;
     ThreadPool *pool;
+    string ServiceName;
+    bool startParaOK ;
+private:
+    //检查启动参数
+    bool checkStartPara(int argc, char const *argv[]);
+    //向注册中心注册
+    void registerService();
 public:
     RpcServer(){pool = new ThreadPool(10,15);}
-    RpcServer(string ip,int port,string regip,int regport);
-    ~RpcServer(){pool->~ThreadPool();}
+    RpcServer(int argc, char const *argv[],string serviceName);
+    ~RpcServer();
     
-    //向服务器维护的map添加服务
-    void addService(string ServiceName);
+    //设置服务名称
+    void setServiceName(string ServiceName){this->ServiceName = ServiceName;}
     //添加方法
-    void addMethod(string ServiceName,string MethodName,RpcMethod method);
-    void registerService();
+    void addMethod(string MethodName,RpcMethod method);
     //服务器开始运行
     void start();
 };
@@ -30,12 +37,16 @@ void handle(int sockcon,int load);
 class RpcClient
 {
 private:
-    string Regip;
-    int RegPort;
+    string Targetip;
+    int TargetPort;
     map<string, ServiceInfo> services;
+    bool isRegistry;
+private:
+    bool checkStartPara(int argc, char const *argv[]);
+
 public:
     RpcClient(){};
-    RpcClient(string regip,int regport);
+    RpcClient(int argc, char const *argv[]);
     ~RpcClient(){};
     //服务调用
     vector<string> rpcCall(string MethodName, initializer_list<string> Para);

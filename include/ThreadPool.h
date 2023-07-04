@@ -16,11 +16,12 @@ using namespace std;
 //线程池执行的任务
 struct Task
 {
-    function<void(int)> f;              //线程执行的函数
+    function<void(int,int)> f;          //线程执行的函数
     int arg;                            //函数的参数
+    int load;                           //线程池的负载
 
     //构造函数
-    Task(function<void(int)> F,int Arg){f = F; arg = Arg;}
+    Task(function<void(int,int)> F,int Arg,int Load){f = F; arg = Arg;load=Load;}
     Task(){};
 };
 
@@ -34,7 +35,7 @@ public:
     ~ThreadPool();
 
     //向任务队列添加任务
-    void addTask(function<void(int)> f,int arg);
+    void addTask(function<void(int,int)> f,int arg,int load);
 
     //得到正在执行任务的线程的数量
     int getBusyNum();

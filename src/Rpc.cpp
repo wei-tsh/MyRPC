@@ -12,7 +12,7 @@ RpcServer::RpcServer(string ip, int port, string regip, int regport)
     pool = new ThreadPool(10,15);
 }
 
-void handle(int sockcon)
+void handle(int sockcon,int load)
 {
     char buffer[1024];
     memset(buffer,0,1024);
@@ -26,8 +26,15 @@ void handle(int sockcon)
     //在本地服务列表查找服务，如果没有就不处理RPC信息
     if (ServicesList.find(mes.serviceName) != ServicesList.end()) 
     {
-        string error = ServicesList[mes.serviceName].executeMethod(mes);
-        mes.error = error;
+        if (!strcmp(mes.methodName.c_str(),"heartCheck"))
+        {
+            mes.returnValue.push_back(to_string(load));
+        }
+        else
+        {
+            string error = ServicesList[mes.serviceName].executeMethod(mes);
+            mes.error = error;
+        }
     }
 
     //回复RPC信息
@@ -50,7 +57,7 @@ void RpcServer::addMethod(string ServiceName,string MethodName, RpcMethod method
     }
     else
     {
-        cout<<"找不到方法名："<<ServiceName<<"，方法："<<MethodName<<"注册失败"<<endl;
+        cout<<"找不到服务名："<<ServiceName<<"，方法："<<MethodName<<"注册失败"<<endl;
     }
     
 }
@@ -73,7 +80,7 @@ void RpcServer::start()
     {
         int sockcon = accept(serversocket,(struct sockaddr *)&addrClient,&len);
         //向线程池添加任务
-        pool->addTask(handle,sockcon);
+        pool->addTask(handle,sockcon,pool->getBusyNum());
     }
 
     //关闭套接字
@@ -146,6 +153,12 @@ vector<string> RpcClient::rpcCall(string MethodName, initializer_list<string> Pa
         //将返回信息转化成RPC报文
         RpcMessage ret = decode(responseData);
 
+        if (ret.error.size() > 0)
+        {
+            cout<<"error:"<<ret.error<<endl;
+            return vector<string>();
+        }
+        
         //如果没有返回值就去下一个服务
         if (ret.returnValue.size() == 0)
             continue;

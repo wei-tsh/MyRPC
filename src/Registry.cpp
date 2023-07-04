@@ -1,6 +1,11 @@
 #include "Registry.h"
 
-void RegistryCenter::RegisterService(const string& ServiceName,const string& ip,int port)
+RegistryCenter::RegistryCenter()
+{
+    HeartCheck = thread(heartCheck,this);
+}
+
+void RegistryCenter::RegisterService(const string &ServiceName, const string &ip, int port)
 {
     //上锁
     lock_guard<mutex> lock(m_mutex);
@@ -22,10 +27,74 @@ string RegistryCenter::FindService()
     return sendServiceList(services);
 }
 
-void RegistryCenter::UpdateLoad(const string& ServiceName,const string& ip,int load)
+void RegistryCenter::heartCheck(RegistryCenter *Center)
+{
+    while (true)
+    {
+        sleep(10);
+        vector<string> deletemap;
+        for (auto &i : Center->services)
+        {
+            RpcMessage mes = createRpcMessage(i.first,"heartCheck",{});
+            string data = encode(mes);
+            int clientSocket = createTcpClient(i.second.ip.c_str(),i.second.port);
+            if (clientSocket < 0) {
+                close(clientSocket);
+                deletemap.push_back(i.first);
+                continue;
+            }
+
+            struct timeval tv;
+            tv.tv_sec = 5;
+            tv.tv_usec = 0;
+            setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
+            // 发送消息
+            send(clientSocket, data.c_str(), data.length(), 0);
+
+            // 接收消息
+            string responseData;
+            char buffer[1024] = { 0 };
+            int len = 0;
+            while ((len = recv(clientSocket, buffer, sizeof(buffer), 0)) > 0) {
+                responseData.append(buffer, len);
+            }
+            // 关闭TCP连接
+            close(clientSocket);
+            //将返回信息转化成RPC报文
+            RpcMessage ret = decode(responseData);
+            if (ret.returnValue.size() == 0)
+            {
+                deletemap.push_back(i.first);
+            }
+            else
+            {
+                int load = stoi(ret.returnValue[0]);
+                Center->UpdateLoad(i.first,load);
+            }
+        }
+        for (auto &i : deletemap)
+        {
+            Center->DeleteService(i);
+        }
+        
+    }
+    
+}
+
+void RegistryCenter::DeleteService(string ServiceName)
 {
     lock_guard<mutex> lock(m_mutex);
-    
+    cout<<ServiceName<<"  "<<"deleted"<<endl;
+    services.erase(ServiceName);
+}
+
+void RegistryCenter::UpdateLoad(const string &ServiceName, int load)
+{
+    lock_guard<mutex> lock(m_mutex);
+    services[ServiceName].load = load;
+
+    cout<<ServiceName<<"  "<<"updated  load:"<<load<<endl;
 }
 
 bool checkStartPara(int argc, char const *argv[],string &ip,int &port)
@@ -112,7 +181,7 @@ int main(int argc, char const *argv[])
         //接收用户信息
         string Data;
         memset(buffer,0,1024);
-        int a = recv(sockcon, buffer, sizeof(buffer), 0);
+        recv(sockcon, buffer, sizeof(buffer), 0);
         Data.append(buffer);
         RegMes Mes = decodeRegMes(Data);
 
@@ -122,20 +191,21 @@ int main(int argc, char const *argv[])
             //发送服务列表
             string responseData = center.FindService();
             send(sockcon,responseData.c_str(),responseData.length(),0);
-
-            //关闭套接字
-            close(sockcon);
-            continue;
         }
         //如果用户种类为1，说明是服务端服务注册
         else if (Mes.type == 1)
         {
-            //关闭套接字
-            close(sockcon);
-
             //将服务添加到服务中心
             center.RegisterService(Mes.ServiceName,inet_ntoa(addrClient.sin_addr),Mes.info.port);
-            continue;
+            memset(buffer,0,1024);
+            while (recv(sockcon, buffer, sizeof(buffer), 0) > 0)
+            {
+                Data.clear();
+                Data.append(buffer);
+                RegMes Mes = decodeRegMes(Data);
+                center.RegisterService(Mes.ServiceName,inet_ntoa(addrClient.sin_addr),Mes.info.port);
+                memset(buffer,0,1024);
+            }
         }
 
         //关闭与用户连接套接字

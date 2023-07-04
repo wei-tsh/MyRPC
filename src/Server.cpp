@@ -3,7 +3,6 @@
 //测试函数
 string add(vector<string>& para,vector<string>& retval)
 {
-    
     double sum;
     try{
         for (auto &i : para)
@@ -15,6 +14,58 @@ string add(vector<string>& para,vector<string>& retval)
     }
     retval.push_back(to_string(sum));
     return string();
+}
+
+string minuses(vector<string>& para,vector<string>& retval)
+{
+    double sum;
+    try{
+        for (auto &i : para)
+        {
+            if (strcmp(i.c_str(),para[0].c_str()))
+            {
+                sum+=stod(i);
+                continue;
+            }
+            sum -=stod(i);
+        }
+    }catch(const invalid_argument& ia){
+        return "para error";
+    }
+    retval.push_back(to_string(sum));
+    return string();
+}
+
+string swaps(vector<string>& para,vector<string>& retval){
+    return string();
+}
+
+string multiply(vector<string>& para,vector<string>& retval){
+    return string();
+}
+
+string divide(vector<string>& para,vector<string>& retval){
+    return string();
+}
+
+string power(vector<string>& para,vector<string>& retval){
+    return string();
+}
+
+string root(vector<string>& para,vector<string>& retval){
+    return string();
+}
+
+string Time(vector<string>& para,vector<string>& retval){
+
+}
+//勾股定理
+string Pyth(vector<string>& para,vector<string>& retval){
+
+}
+
+string Mrandom(vector<string>& para,vector<string>& retval){
+
 }
 
 bool checkStartPara(int argc, char const *argv[],string &ip,int &port,string &regip,int &regport)
@@ -115,9 +166,20 @@ int main(int argc, char const *argv[])
 
     //添加服务
     server.addService("one");
+    server.addService("two");
 
     //注册方法
     server.addMethod("one","add",add);
+    server.addMethod("one","minuses",minuses);
+    server.addMethod("one","power",power);
+    server.addMethod("one","swaps",swaps);
+    server.addMethod("one","multiply",multiply);
+    server.addMethod("one","divide",divide);
+    server.addMethod("one","root",root);
+    server.addMethod("one","Time",Time);
+    server.addMethod("one","Pyth",Pyth);
+    server.addMethod("one","Mrandom",Mrandom);
+    server.addMethod("two","add",add);
 
     server.start();
 

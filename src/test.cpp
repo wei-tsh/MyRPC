@@ -23,8 +23,10 @@
 
 int main(int argc, char const *argv[])
 {
-    RpcMessage c = decode("{\"ServiceName\":\"one\",\"MethodName\":\"add\",\"Parameters\":[\"1\",\"2\",\"5\",\"7\",\"9\"],\"ReturnValues\":[],\"Error\":\"\"}");
-    cout<<c.serviceName<<"  "<<c.methodName<<"  "<<c.error<<"  "<<endl;
+
+    RpcMessage a = createRpcMessage("111","222",{"111","222","333"});
+    string b = encode(a);
+    cout<<b<<endl;
 
     return 0;
 }

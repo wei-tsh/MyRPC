@@ -2,8 +2,6 @@
 #include "RpcService.h"
 #include "ThreadPool.h"
 
-
-
 class RpcServer
 {
 private:
@@ -27,7 +25,7 @@ public:
 };
 
 //处理用户的连接
-void handle(int sockcon);
+void handle(int sockcon,int load);
 
 class RpcClient
 {

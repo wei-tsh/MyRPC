@@ -47,10 +47,10 @@ int ThreadPool::getAliveNum()
     return liveNum;
 }
 
-void ThreadPool::addTask(function<void(int)> f,int arg)
+void ThreadPool::addTask(function<void(int,int)> f,int arg,int load)
 {
     unique_lock<mutex> lock(poolmutex);
-    tasks.push(Task(f,arg));
+    tasks.push(Task(f,arg,load));
 
     //让一个工作线程开始工作
     notEmpty.notify_one();
@@ -90,7 +90,7 @@ void ThreadPool::worker(ThreadPool* pool)
 
         //执行任务
         pool->busyNum++;
-        task.f(task.arg);
+        task.f(task.arg,task.load);
         pool->busyNum--;
     }
 }

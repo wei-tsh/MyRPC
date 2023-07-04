@@ -11,7 +11,7 @@ using namespace std;
 //服务信息
 struct ServiceInfo
 {
-    string ip;             // 服务IP地址
+    string ip;                  // 服务IP地址
     int port;                   // 服务端口
     int load;                   // 服务负载
 };

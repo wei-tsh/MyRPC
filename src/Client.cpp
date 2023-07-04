@@ -68,7 +68,7 @@ int main(int argc, char const *argv[])
     RpcClient client(ip,port);
 
     //返回结果
-    vector<string> ret_val = client.rpcCall("add",{"1","2","5","7","9"});
+    vector<string> ret_val = client.rpcCall("add",{"1","a","5","7","9"});
     for (auto &i : ret_val)
     {
         cout<<i<<endl;

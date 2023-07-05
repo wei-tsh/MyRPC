@@ -37,7 +37,7 @@ void RegistryCenter::heartCheck(RegistryCenter *Center)
         {
             RpcMessage mes = createRpcMessage(i.first,"heartCheck",{});
             string data = encode(mes);
-            int clientSocket = createTcpClient(i.second.ip.c_str(),i.second.port);
+            int clientSocket = createTcpClient(i.second.ip.c_str(),i.second.port,0);
             if (clientSocket < 0) {
                 close(clientSocket);
                 deletemap.push_back(i.first);
@@ -77,9 +77,7 @@ void RegistryCenter::heartCheck(RegistryCenter *Center)
         {
             Center->DeleteService(i);
         }
-        
     }
-    
 }
 
 void RegistryCenter::DeleteService(string ServiceName)
@@ -103,7 +101,7 @@ int main(int argc, char const *argv[])
     RegistryCenter center;
     
     //创建监听套接字
-    int serversocket =createTcpServer(12345);
+    int serversocket =createTcpServer("0.0.0.0",12345,0);
     if (serversocket < 0) {
         close(serversocket);
         cout<<"创建服务器失败"<<endl;
@@ -136,16 +134,7 @@ int main(int argc, char const *argv[])
         else if (Mes.type == 1)
         {
             //将服务添加到服务中心
-            center.RegisterService(Mes.ServiceName,inet_ntoa(addrClient.sin_addr),Mes.info.port);
-            memset(buffer,0,1024);
-            while (recv(sockcon, buffer, sizeof(buffer), 0) > 0)
-            {
-                Data.clear();
-                Data.append(buffer);
-                RegMes Mes = decodeRegMes(Data);
-                center.RegisterService(Mes.ServiceName,inet_ntoa(addrClient.sin_addr),Mes.info.port);
-                memset(buffer,0,1024);
-            }
+            center.RegisterService(Mes.ServiceName,Mes.info.ip,Mes.info.port);
         }
 
         //关闭与用户连接套接字

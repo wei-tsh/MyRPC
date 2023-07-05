@@ -84,7 +84,6 @@ int main(int argc, char const *argv[])
     server.addMethod("Time",Time);
     server.addMethod("Pyth",Pyth);
     server.addMethod("Mrandom",Mrandom);
-    server.addMethod("add",add);
 
     server.start();
 

@@ -13,6 +13,7 @@ private:
     ThreadPool *pool;
     string ServiceName;
     bool startParaOK ;
+    bool IPtype;
 private:
     //检查启动参数
     bool checkStartPara(int argc, char const *argv[]);
@@ -40,7 +41,7 @@ private:
     string Targetip;
     int TargetPort;
     map<string, ServiceInfo> services;
-    bool isRegistry;
+    bool IPtype;
 private:
     bool checkStartPara(int argc, char const *argv[]);
 

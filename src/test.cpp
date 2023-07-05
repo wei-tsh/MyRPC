@@ -18,18 +18,18 @@
 //     sleep(1);
 // }
 
-#include"RpcMes.h"
-#include<iostream>
+// #include"RpcMes.h"
+// #include<iostream>
 
-int main(int argc, char const *argv[])
-{
+// int main(int argc, char const *argv[])
+// {
 
-    RpcMessage a = createRpcMessage("111","222",{"111","222","333"});
-    string b = encode(a);
-    cout<<b<<endl;
+//     RpcMessage a = createRpcMessage("111","222",{"111","222","333"});
+//     string b = encode(a);
+//     cout<<b<<endl;
 
-    return 0;
-}
+//     return 0;
+// }
 
 
 // #include<iostream>
@@ -117,12 +117,12 @@ int main(int argc, char const *argv[])
 //     return 0;
 // }
 
-// #include "TCP.h"
-// #include<iostream>
-// using namespace std;
-// int main(int argc, char const *argv[])
-// {
-//     bool a =CheckIPAddrIsVaild("127.0.a.1");
-//     cout<<a<<endl;
-//     return 0;
-// }
+#include "TCP.h"
+#include<iostream>
+using namespace std;
+int main(int argc, char const *argv[])
+{
+    bool a =CheckIPAddrIsIPv6("FF01::1101");
+    cout<<a<<endl;
+    return 0;
+}

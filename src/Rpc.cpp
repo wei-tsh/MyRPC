@@ -20,6 +20,12 @@ void handle(int sockcon,int load)
 {
     char buffer[1024];
     memset(buffer,0,1024);
+
+    //设置超时
+    struct timeval tv;
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+    setsockopt(sockcon, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     
     //接收RPC信息
     string Data;
@@ -58,7 +64,7 @@ void RpcServer::start()
     
     registerService();
     //创建监听套接字
-    int serversocket =createTcpServer(port);
+    int serversocket =createTcpServer(IP.c_str(),port,IPtype);
     if (serversocket < 0) {
         close(serversocket);
         cout<<"创建服务器失败"<<endl;
@@ -103,9 +109,20 @@ bool RpcServer::checkStartPara(int argc, char const *argv[])
         //判断是否有输入ip地址
         else if(strcmp(argv[i],"-i")==0)
         {
-            if (argc > i+1 && CheckIPAddrIsVaild(argv[i+1]))
+            if (argc > i+1)
             {
-                IP = argv[i+1];
+                int a = CheckIPAddrIsIPv4(argv[i+1]);
+                int b = CheckIPAddrIsIPv6(argv[i+1]);
+                if (a||b)
+                {
+                    IP = argv[i+1];
+                    if(a){
+                        IPtype = 0;
+                    }
+                    else{
+                        IPtype = 1;
+                    }
+                }
             }else
             {
                 cout<<"输入错误，-h 查看启动参数"<<endl;
@@ -131,10 +148,10 @@ bool RpcServer::checkStartPara(int argc, char const *argv[])
 void RpcServer::registerService()
 {
     //创建与注册中心的连接
-    int clientsocket = createTcpClient(registryIP.c_str(),registryPort);
+    int clientsocket = createTcpClient(registryIP.c_str(),registryPort,IPtype);
     if(clientsocket < 0)
     {
-        cout<<"连接不上服务器，服务注册失败"<<endl;
+        cout<<"连接注册中心失败"<<endl;
         return;
     }
 
@@ -161,12 +178,13 @@ vector<string> RpcClient::rpcCall(string MethodName, initializer_list<string> Pa
         RpcMessage Mes = createRpcMessage(ServiceName,MethodName,Para);
 
         // 建立TCP连接
-        int clientSocket = createTcpClient(i.second.ip.c_str(),i.second.port);
+        int clientSocket = createTcpClient(i.second.ip.c_str(),i.second.port,IPtype);
         if (clientSocket < 0) {
             close(clientSocket);
             continue;
         }
 
+        //设置超时
         struct timeval tv;
         tv.tv_sec = 5;
         tv.tv_usec = 0;
@@ -232,10 +250,21 @@ bool RpcClient::checkStartPara(int argc, char const *argv[])
         //判断是否有输入ip地址
         else if(strcmp(argv[i],"-i")==0)
         {
-            if (argc > i+1&&CheckIPAddrIsVaild(argv[i+1]))
+            if (argc > i+1)
             {
-                Targetip = argv[i+1];
-                hasip = true;
+                int a = CheckIPAddrIsIPv4(argv[i+1]);
+                int b = CheckIPAddrIsIPv6(argv[i+1]);
+                if (a||b)
+                {
+                    Targetip = argv[i+1];
+                    hasip = true;
+                    if(a){
+                        IPtype = 0;
+                    }
+                    else{
+                        IPtype = 1;
+                    }
+                }
             }
             else
             {
@@ -263,7 +292,7 @@ bool RpcClient::checkStartPara(int argc, char const *argv[])
 void RpcClient::ServiceFind()
 {
     //与注册中心建立TCP连接
-    int clientSocket = createTcpClient(Targetip.c_str(), TargetPort);
+    int clientSocket = createTcpClient(Targetip.c_str(), TargetPort,IPtype);
     if (clientSocket < 0) {
         close(clientSocket);
         return ;
